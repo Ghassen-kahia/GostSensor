@@ -1,0 +1,269 @@
+{
+  "updatedAt": "2026-10-12T11:54:43.170Z",
+  "createdAt": "2026-10-12T11:53:34.052Z",
+  "id": "qDM2g5nh3R90KraK",
+  "name": "Ghost Sensor B - Incident Documentation",
+  "description": "Sub-workflow: runs Agent 2 (versioned technical incident report) for one incident, validates it, then hands off to Workflow C.",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "6d5d1892-ea4d-47ac-8f7e-36332dd5ae33",
+      "name": "From Workflow A",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "incidentId",
+              "type": "string"
+            },
+            {
+              "name": "version",
+              "type": "number"
+            },
+            {
+              "name": "apiBaseUrl",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c88e1896-bb45-4c06-8724-072b8ccab829",
+      "name": "Run Agent 2 Documentation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.apiBaseUrl }}/api/agents/documentation",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ incidentId: $json.incidentId, version: $json.version, executionId: String($execution.id), workflow: \"B-incident-documentation\" }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "83fbca14-6cf7-4b7b-8e4c-f902e576a039",
+      "name": "Valid Agent 2 Output?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valid === true && (typeof $json.version === \"number\" || $json.skipped === true) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "bcda0d1d-caf2-4e0f-9c2a-e882d16aca01",
+      "name": "Hand Off to Workflow C",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1080,
+        200
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "06v0WsE2IUbblMMT",
+          "cachedResultName": "Ghost Sensor C - Root-Cause Analysis"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "incidentId": "={{ $(\"From Workflow A\").item.json.incidentId }}",
+            "version": "={{ $(\"From Workflow A\").item.json.version }}",
+            "apiBaseUrl": "={{ $(\"From Workflow A\").item.json.apiBaseUrl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "incidentId",
+              "displayName": "incidentId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "version",
+              "displayName": "version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "apiBaseUrl",
+              "displayName": "apiBaseUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "7cc95844-1eb1-48ca-9bb3-325dfc72c49a",
+      "name": "Log Invalid Agent 2 Output",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1080,
+        420
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"From Workflow A\").item.json.apiBaseUrl }}/api/automation/events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ level: \"ERROR\", kind: \"INVALID_AGENT_OUTPUT\", message: \"Agent 2 returned an unexpected payload for \" + $(\"From Workflow A\").item.json.incidentId, workflow: \"B-incident-documentation\", executionId: String($execution.id), node: \"Run Agent 2 Documentation\" }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "aaa95237-6ba5-4fb1-8c85-68a74b98eff3",
+      "name": "Sticky Note 9adae029",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        190,
+        250
+      ],
+      "parameters": {
+        "content": "## Workflow B - Incident documentation (Agent 2)\nThe backend builds a versioned technical report (Markdown/HTML, printable to PDF) from stored evidence: scope, thresholds, baseline, adjacent rooms, virtual-sensor values with uncertainty, related incidents and timeline. Re-running on an unchanged incident is a no-op (content hash).\n\nValid output -> Workflow C.",
+        "color": 6,
+        "width": 860,
+        "height": 200
+      }
+    }
+  ],
+  "connections": {
+    "From Workflow A": {
+      "main": [
+        [
+          {
+            "node": "Run Agent 2 Documentation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Agent 2 Documentation": {
+      "main": [
+        [
+          {
+            "node": "Valid Agent 2 Output?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Agent 2 Output?": {
+      "main": [
+        [
+          {
+            "node": "Hand Off to Workflow C",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Invalid Agent 2 Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 300,
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ZVReyltjkeEm1cib"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionCounter": 2,
+  "sourceWorkflowId": null,
+  "tags": [
+    {
+      "updatedAt": "2026-10-12T11:54:32.575Z",
+      "createdAt": "2026-10-12T11:54:32.575Z",
+      "id": "41PCa5DfhN7YqKQC",
+      "name": "ghost-sensor"
+    }
+  ],
+  "versionMetadata": {
+    "name": "Initial documentation sub-workflow",
+    "description": "Created with 6 nodes: From Workflow A, Run Agent 2 Documentation, Valid Agent 2 Output?, Hand Off to Workflow C, Log Invalid Agent 2 Output and 1 more"
+  }
+}

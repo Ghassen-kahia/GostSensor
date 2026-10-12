@@ -1,0 +1,44 @@
+{
+  "_doc": "Agent 1 rules. Heartbeat timeouts (stale/offline) are per sensor type in the sensors table (seeded by the ETL). A numeric value of 0 is never a failure by itself.",
+  "severity_order": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+  "base_severity": {
+    "SENSOR_OFFLINE": "MEDIUM",
+    "SENSOR_STALE": "LOW",
+    "SENSOR_INVALID": "LOW",
+    "SENSOR_SPIKE": "LOW",
+    "SENSOR_DRIFT": "MEDIUM",
+    "SENSOR_OUT_OF_RANGE": "MEDIUM",
+    "ENVIRONMENTAL_ANOMALY": "MEDIUM",
+    "ENERGY_ANOMALY": "MEDIUM",
+    "TOPOLOGY_INCONSISTENCY": "INFO",
+    "UNKNOWN": "LOW"
+  },
+  "type_severity_cap": {"OCCUPANCY": "LOW", "HUMIDITY": "LOW", "LIGHTING": "LOW", "WATER": "MEDIUM"},
+  "escalation": {
+    "group_min_sensors": 5,
+    "group_window_s": 1800,
+    "group_high_at": 5,
+    "group_critical_fraction": 0.25,
+    "long_outage_s": 86400,
+    "no_virtual_sensor_bump": true
+  },
+  "plausible_range": {
+    "TEMPERATURE": [0.0, 45.0],
+    "CO2": [300.0, 5000.0],
+    "OCCUPANCY": [0.0, 1.0],
+    "HUMIDITY": [0.0, 100.0]
+  },
+  "spike": {
+    "TEMPERATURE": {"max_step": 3.0, "max_neighbour_step": 1.0},
+    "CO2": {"max_step": 900.0, "max_neighbour_step": 200.0}
+  },
+  "drift": {
+    "TEMPERATURE": {"recent_window_h": 24, "baseline_window_h": 336, "threshold": 2.0, "min_valid_fraction": 0.75}
+  },
+  "environmental": {
+    "TEMPERATURE": {"baseline_days": 14, "robust_z": 4.0, "min_abs_dev": 3.0, "persist_buckets": 2},
+    "CO2": {"high": 1500.0, "critical": 2000.0, "persist_buckets": 2}
+  },
+  "energy": {"baseline_weeks": 4, "robust_z": 6.0, "min_abs_excess": 1.0, "min_rel_excess": 0.5, "min_history_points": 3},
+  "clear": {"valid_buckets_required": 2}
+}

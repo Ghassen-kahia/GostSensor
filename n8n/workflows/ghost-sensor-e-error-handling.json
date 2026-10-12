@@ -1,0 +1,165 @@
+{
+  "updatedAt": "2026-10-12T11:54:32.585Z",
+  "createdAt": "2026-10-12T11:52:04.301Z",
+  "id": "fb0rKkBZE2wFciBB",
+  "name": "Ghost Sensor E - Error Handling",
+  "description": "Error workflow for Ghost Sensor A-D: records failed executions (sanitized) in the backend workflow_events log for the dashboard.",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "848cbed9-a5d8-49f5-836c-6ed975715c53",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "3d85de8e-7288-4691-a98b-5aabf298e968",
+      "name": "Sanitize Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "api",
+              "name": "apiBaseUrl",
+              "value": "http://172.23.32.1:8000",
+              "type": "string"
+            },
+            {
+              "id": "wf",
+              "name": "workflow",
+              "value": "={{ $json.workflow?.name ?? \"unknown\" }}",
+              "type": "string"
+            },
+            {
+              "id": "ex",
+              "name": "executionId",
+              "value": "={{ String($json.execution?.id ?? \"\") }}",
+              "type": "string"
+            },
+            {
+              "id": "nd",
+              "name": "node",
+              "value": "={{ $json.execution?.lastNodeExecuted ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "msg",
+              "name": "message",
+              "value": "={{ ($json.execution?.error?.message ?? \"unknown error\").slice(0, 500) }}",
+              "type": "string"
+            },
+            {
+              "id": "kind",
+              "name": "kind",
+              "value": "={{ /ECONNREFUSED|ETIMEDOUT|ENOTFOUND|timeout/i.test($json.execution?.error?.message ?? \"\") ? \"BACKEND_UNREACHABLE\" : (/401|403/.test($json.execution?.error?.message ?? \"\") ? \"AUTH_FAILURE\" : \"WORKFLOW_FAILURE\") }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "25f30580-4a41-472d-a0b3-4957522585f0",
+      "name": "Report Error to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        800,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.apiBaseUrl }}/api/automation/events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ level: \"ERROR\", kind: $json.kind, message: $json.message, workflow: $json.workflow, executionId: $json.executionId, node: $json.node, details: { source: \"n8n error workflow\" } }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "50a06e08-29ed-467f-9572-0813baec67b9",
+      "name": "Sticky Note 6133e6de",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        190,
+        250
+      ],
+      "parameters": {
+        "content": "## Workflow E - Error handling\nSet as the *Error Workflow* of workflows A-D. Captures failed executions (backend unreachable, auth, invalid agent output, ML/LLM failures surfaced by the backend) and records them in the backend `workflow_events` table, visible on the dashboard *Workflow & System Health* page.\n\nOnly the error message (truncated), node and execution id are forwarded - never payloads or credentials.\n\n**Configure:** `apiBaseUrl` in *Sanitize Error* (WSL -> Windows host IP) and the *Ghost Sensor API token* credential (Custom Auth template `{\"headers\":{\"X-Ghost-Token\":\"{{api_key}}\"}}`).",
+        "color": 7,
+        "width": 860,
+        "height": 200
+      }
+    }
+  ],
+  "connections": {
+    "On Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Sanitize Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize Error": {
+      "main": [
+        [
+          {
+            "node": "Report Error to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionCounter": 1,
+  "sourceWorkflowId": null,
+  "tags": [
+    {
+      "updatedAt": "2026-10-12T11:54:32.575Z",
+      "createdAt": "2026-10-12T11:54:32.575Z",
+      "id": "41PCa5DfhN7YqKQC",
+      "name": "ghost-sensor"
+    }
+  ],
+  "versionMetadata": {
+    "name": "Initial error handler",
+    "description": "Created with 4 nodes: On Workflow Error, Sanitize Error, Report Error to Backend, Sticky Note 6133e6de"
+  }
+}

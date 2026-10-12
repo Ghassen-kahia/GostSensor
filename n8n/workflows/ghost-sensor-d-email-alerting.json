@@ -1,0 +1,242 @@
+{
+  "updatedAt": "2026-10-12T11:54:43.277Z",
+  "createdAt": "2026-10-12T11:52:39.196Z",
+  "id": "P3KmGYg9y29OVKP0",
+  "name": "Ghost Sensor D - Email Alerting",
+  "description": "Sub-workflow: runs Agent 4 (notification policy, dedup, email delivery/test mode) for one incident and validates its output.",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "dcbd88ca-dfa9-429a-ab57-d5a93bbba149",
+      "name": "From Workflow C",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "incidentId",
+              "type": "string"
+            },
+            {
+              "name": "version",
+              "type": "number"
+            },
+            {
+              "name": "apiBaseUrl",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c9d603d0-1b87-48d3-8e3e-2c6da5ea00e2",
+      "name": "Run Agent 4 Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.apiBaseUrl }}/api/agents/notification",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ incidentId: $json.incidentId, version: $json.version, executionId: String($execution.id), workflow: \"D-alerting\" }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "f0746177-0588-4b89-9eda-abcca79af834",
+      "name": "Valid Agent 4 Output?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valid === true && (Array.isArray($json.actions) || $json.skipped === true) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a1e37aee-fbb8-4408-8c4b-1c0d36ac6265",
+      "name": "Notification Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1080,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i",
+              "name": "incidentId",
+              "value": "={{ $json.incidentId }}",
+              "type": "string"
+            },
+            {
+              "id": "s",
+              "name": "stage",
+              "value": "NOTIFIED",
+              "type": "string"
+            },
+            {
+              "id": "a",
+              "name": "deliveries",
+              "value": "={{ ($json.actions ?? []).map(a => a.kind + \":\" + a.status).join(\", \") || \"none required\" }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d090bbaa-37a1-4560-8ff2-51a8c4ee8e84",
+      "name": "Log Invalid Agent 4 Output",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1080,
+        420
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"From Workflow C\").item.json.apiBaseUrl }}/api/automation/events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ level: \"ERROR\", kind: \"INVALID_AGENT_OUTPUT\", message: \"Agent 4 returned an unexpected payload for \" + $(\"From Workflow C\").item.json.incidentId, workflow: \"D-alerting\", executionId: String($execution.id), node: \"Run Agent 4 Notification\" }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "330a8229-ad41-44d3-beb8-516a7dad512e",
+      "name": "Sticky Note 829a3dbb",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        190,
+        250
+      ],
+      "parameters": {
+        "content": "## Workflow D - Email alerting (Agent 4)\nCalled by Workflow C for each analysed incident. The backend applies the severity policy (INFO/LOW dashboard only, MEDIUM optional, HIGH email, CRITICAL email + escalation), deduplication, storm protection, retries with backoff and test mode.\n\nSMTP credentials live in the backend `.env` - never in this workflow. A delivery is only reported as SENT when the SMTP server accepted it.",
+        "color": 4,
+        "width": 860,
+        "height": 200
+      }
+    }
+  ],
+  "connections": {
+    "From Workflow C": {
+      "main": [
+        [
+          {
+            "node": "Run Agent 4 Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Agent 4 Notification": {
+      "main": [
+        [
+          {
+            "node": "Valid Agent 4 Output?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Agent 4 Output?": {
+      "main": [
+        [
+          {
+            "node": "Notification Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Invalid Agent 4 Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 120,
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "06v0WsE2IUbblMMT"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionCounter": 2,
+  "sourceWorkflowId": null,
+  "tags": [
+    {
+      "updatedAt": "2026-10-12T11:54:32.575Z",
+      "createdAt": "2026-10-12T11:54:32.575Z",
+      "id": "41PCa5DfhN7YqKQC",
+      "name": "ghost-sensor"
+    }
+  ],
+  "versionMetadata": {
+    "name": "Initial alerting sub-workflow",
+    "description": "Created with 6 nodes: From Workflow C, Run Agent 4 Notification, Valid Agent 4 Output?, Notification Result, Log Invalid Agent 4 Output and 1 more"
+  }
+}

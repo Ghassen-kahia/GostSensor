@@ -1,0 +1,14 @@
+{
+  "_doc": "Agent 4 policy. Recipients come from environment variables (ALERT_RECIPIENTS, ESCALATION_RECIPIENTS); never stored here.",
+  "policy": {
+    "INFO":     {"channel": "DASHBOARD", "email": false},
+    "LOW":      {"channel": "DASHBOARD", "email": false},
+    "MEDIUM":   {"channel": "EMAIL", "email": false, "_note": "set email=true to email MEDIUM incidents"},
+    "HIGH":     {"channel": "EMAIL", "email": true},
+    "CRITICAL": {"channel": "EMAIL", "email": true, "escalate_after_s": 1800}
+  },
+  "notify_on_resolution": true,
+  "retry": {"max_attempts": 4, "base_delay_s": 30, "max_delay_s": 900},
+  "storm": {"max_emails_per_hour": 12, "min_interval_same_incident_s": 3600},
+  "include_simulated": true
+}

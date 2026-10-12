@@ -6,6 +6,9 @@ silent, it infers the missing value from neighbouring rooms with a validated mac
 Four agents then document, analyse, and notify each incident. Orchestration runs through n8n, with a
 built-in fallback.
 
+It also includes an **assistant** you can question in plain language (answers come from the platform
+data through read-only tools) and a **CSV data-check** page that audits any uploaded sensor export.
+
 Everything shown is derived from the data in this folder. No measurement, room, or adjacency is
 invented. Inferred values are always labelled, and simulated faults are always labelled.
 
@@ -73,8 +76,8 @@ backend processes incidents itself after `GHOST_LOCAL_FALLBACK_AFTER_S` (300 s),
 ## Tests
 
 ```powershell
-cd backend;  python -m pytest tests -q     # 22 tests on a temporary copy of the real database
-cd frontend; npm test                      # 7 UI tests (physical vs inferred, formatting, sensors page)
+cd backend;  python -m pytest tests -q     # 37 tests on a temporary copy of the real database
+cd frontend; npm test                      # 8 UI tests (physical vs inferred, formatting, sensors page, safe chat rendering)
 npm run build                              # typecheck + production build
 ```
 
@@ -97,8 +100,9 @@ written to code, configs or workflow JSON. Rule files:
 backend/ghost/etl        IFC + MSI topology, CSV historian (build_all.py)
 backend/ghost/ml         features (shared train/serve), training + evaluation
 backend/ghost/engine     replay clock, readings + fault overlay, Agent 1 detection, virtual sensors, incidents, pipeline
-backend/ghost/agents     Agent 2 documentation, Agent 3 analysis, Agent 4 notification, LLM providers, schemas
-backend/ghost/api        FastAPI app, read / operator / automation routes, auth
+backend/ghost/agents     Agent 2 documentation, Agent 3 analysis, Agent 4 notification, assistant (chat.py), LLM providers, schemas
+backend/ghost/api        FastAPI app, read / operator / automation / upload + chat routes, auth
+backend/ghost/datacheck.py  CSV data-quality checker
 backend/tests            pytest suite (real data)
 frontend/src             React + TypeScript dashboard
 n8n/workflows            exported, importable workflows A-E (no credentials inside)

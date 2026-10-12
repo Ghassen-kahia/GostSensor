@@ -85,6 +85,28 @@ The `source` field is decided on the server:
 | `POST /api/admin/reset` | `{"confirm": "RESET", "startAt": "2026-03-02T06:00:00Z"}` — **destructive**: wipes runtime tables and restarts the replay (paused) |
 | `POST /api/detection/run` | forces Agent 1 now |
 
+## Data check and assistant
+
+| Method & path | Auth | Description |
+|---|---|---|
+| `POST /api/uploads` (multipart field `file`) | operator | Upload a `.csv/.tsv/.txt` (≤ `GHOST_MAX_UPLOAD_MB`). Returns `{id, status: "PROCESSING"}`; analysis runs in the background. |
+| `GET /api/uploads` | read | Uploads with their summary (layout, rows, series, types, period, checks). |
+| `GET /api/uploads/{id}` | read | Summary + per-series metrics and issues (`error` / `warn` / `info`). |
+| `GET /api/uploads/{id}/series?name=&points=1500` | read | Full metrics of one series + resampled mean/min/max points for charting. |
+| `DELETE /api/uploads/{id}` | operator | Delete the file and its analysis. |
+| `POST /api/chat` | operator | `{"messages": [{"role": "user", "content": "..."}], "page": "/incidents"}` → `{answer, toolCalls, mode: "llm"\|"builtin", model, latencyMs}`. Stateless: send the conversation each time (≤ 40 messages). |
+| `GET /api/chat/status` | read | Assistant mode, provider, model and available tools. |
+
+Checks per series: empty and non-numeric values, exact and conflicting duplicates, transmission gaps
+(> max(3 × median interval, 30 min)), completeness, values outside the plausible range for the
+detected type, spikes (robust step test), flat-lines (≥ 24 h for temperature/humidity/CO₂), counter
+decreases (energy/water), room unknown to the digital twin, and difference from the historian when
+the sensor exists on the platform.
+
+The assistant's tools are read-only. Tool output is passed to the model as data, never as
+instructions. Chat requires the operator token because, with an LLM configured, each question costs
+API usage.
+
 ## Automation endpoints (n8n)
 
 | Method & path | Body → response |

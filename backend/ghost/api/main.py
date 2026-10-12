@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from .. import db
 from ..config import settings
 from ..engine import pipeline, virtual
-from . import routes_read, routes_write
+from . import routes_data, routes_read, routes_write
 
 
 class JsonFormatter(logging.Formatter):
@@ -48,6 +48,7 @@ async def lifespan(app: FastAPI):
         log.info("migrations applied: %s", applied)
     if not db.scalar("SELECT COUNT(*) FROM sensors", conn=conn):
         log.warning("database has no sensors yet - run: python -m ghost.etl.build_all")
+    routes_data.mark_interrupted(conn)
     conn.close()
     virtual.load_bundle()
     if settings.background_engine:
@@ -66,7 +67,8 @@ app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_cr
 async def guard_and_log(request: Request, call_next):
     started = time.time()
     length = request.headers.get("content-length")
-    if length and length.isdigit() and int(length) > settings.max_body_bytes:
+    limit = settings.max_upload_mb * 1024 * 1024 + 65536 if request.url.path == "/api/uploads" else settings.max_body_bytes
+    if length and length.isdigit() and int(length) > limit:
         return JSONResponse({"detail": "request body too large"}, status_code=413)
     try:
         response = await call_next(request)
@@ -82,6 +84,7 @@ async def guard_and_log(request: Request, call_next):
 app.include_router(routes_read.router)
 app.include_router(routes_write.ops)
 app.include_router(routes_write.auto)
+app.include_router(routes_data.router)
 
 
 def run() -> None:

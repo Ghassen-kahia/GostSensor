@@ -81,3 +81,17 @@ describe("Sensors page", () => {
     expect(rowA.className).not.toContain("inferred");
   });
 });
+
+describe("assistant markdown", () => {
+  it("renders bold, lists and links incident / room ids without raw HTML", async () => {
+    const { Markdown } = await import("../Chat");
+    const { container } = render(
+      <MemoryRouter><Markdown text={"**2** open incidents:\n- INC-20260303-A00ACC in 02-14-N\n- <img src=x onerror=alert(1)>"} /></MemoryRouter>,
+    );
+    expect(container.querySelector("strong")?.textContent).toBe("2");
+    expect(screen.getByRole("link", { name: "INC-20260303-A00ACC" })).toHaveAttribute("href", "/incidents/INC-20260303-A00ACC");
+    expect(screen.getByRole("link", { name: "02-14-N" })).toHaveAttribute("href", "/twin?room=02-14-N");
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.textContent).toContain("<img src=x onerror=alert(1)>");
+  });
+});

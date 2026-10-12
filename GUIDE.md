@@ -32,7 +32,9 @@ The real data of this building shows exactly this:
 | 👻 **Ghost sensors** | When a temperature sensor goes silent, a Random Forest model estimates the missing value from neighbouring rooms and the room's history. The estimate comes with a 90% uncertainty range and is **always labelled "Capteur Virtuel Actif"**: it is never shown as a real measurement. |
 | 🤖 **4 AI agents** | **1 Detection**: finds and classifies the problem. **2 Documentation**: writes the incident report. **3 Root cause**: proposes ranked causes with evidence for and against, plus recommended actions. **4 Alerting**: emails the right people, without duplicates. |
 | 🔁 **n8n automation** | Five workflows chain the agents (A → B → C → D, plus E for errors). If n8n is down, the backend runs the agents itself. |
-| 📊 **Dashboard** | 8 pages: overview, digital twin, live sensors, ghost sensors, incidents, AI investigation, reports & analytics, system health. |
+| 📊 **Dashboard** | 9 pages: overview, digital twin, live sensors, ghost sensors, incidents, AI investigation, reports & analytics, data check, system health. |
+| 💬 **Assistant (chatbot)** | A chat button on every page. Ask anything about the building ("which sensors are offline?", "explain INC-…", "how accurate is the model?", "what's wrong with my uploaded CSV?"). It answers from the platform's real data through read-only lookups, and shows which lookups it made. With an AI key it handles any free-form question; without one it runs in a built-in mode for the common questions. |
+| 📁 **Data check (CSV)** | Upload any sensor CSV (temperature, humidity, CO₂, energy, water, lighting, occupancy) and get a quality report: format detection, duplicates, empty values, transmission gaps, out-of-range values, spikes, frozen values, unknown rooms, and comparison with the platform historian, with a chart per series. Files are analysed, never imported. |
 
 ### Results on real data
 
@@ -155,6 +157,8 @@ Stop with `Ctrl+C` in each terminal.
 6. **Incidents**: open the new incident. You'll find the evidence, the technical report (download as Markdown or print to PDF), and the root-cause hypotheses (confirm or reject them).
 7. **AI investigation**: what each of the 4 agents did.
 8. Back in **Workflows & health**, click **End (recover)**. The sensor returns to *Physical* and the incident resolves itself.
+9. **Data check (CSV)**: drop one of the export files (e.g. `co2_csv/co2_2026-01-01_to_2026-01-31.csv`). After a few seconds you get its quality report; for this file it shows that 11 of 44 CO₂ sensors never sent a valid value in January.
+10. Click the **chat button** (bottom right) and ask: *"Which sensors are offline?"* or *"Summarise the last uploaded CSV"*.
 
 To replay the real March 3 outage: **Reset replay** (type `RESET`), then **Jump forward** to `2026-03-03 09:00`.
 
@@ -174,12 +178,13 @@ Then:
 Full guide: [docs/N8N_SETUP.md](docs/N8N_SETUP.md). Without n8n everything still works: the backend
 processes incidents itself after 5 minutes.
 
-### 6. Optional: AI narrative and real emails
+### 6. Optional: AI (assistant + narratives) and real emails
 
 In `.env`:
 
 ```ini
-# AI-written summaries (validated against the evidence; the platform works without them)
+# AI: free-form assistant answers + AI-written report summaries (validated against the evidence).
+# Without it, the assistant runs in built-in mode and everything else works.
 LLM_PROVIDER=anthropic
 LLM_API_KEY=<your key>
 
@@ -198,8 +203,8 @@ Restart the backend after editing `.env`.
 ### 7. Run the tests
 
 ```powershell
-cd backend;  python -m pytest tests -q    # 22 tests on a copy of the real database
-cd frontend; npm test                     # 7 UI tests
+cd backend;  python -m pytest tests -q    # 37 tests on a copy of the real database
+cd frontend; npm test                     # 8 UI tests
 ```
 
 ### 8. Common problems
@@ -212,6 +217,8 @@ cd frontend; npm test                     # 7 UI tests
 | Port 8000 or 5173 already in use | An old instance is still running. Close it or use it. |
 | Operator buttons greyed out | Sign in with `GHOST_OPERATOR_TOKEN`. |
 | Replay reached the end (June 30) | **Reset replay** on *Workflows & health*. |
+| Assistant says "built-in mode" | No AI configured: set `LLM_PROVIDER=anthropic` and `LLM_API_KEY` in `.env`, then restart the backend. |
+| CSV upload refused | Sign in as operator; the file must be `.csv/.tsv/.txt` text, under `GHOST_MAX_UPLOAD_MB` (300 MB), with a timestamp column. |
 
 More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 

@@ -152,3 +152,49 @@ export interface Summary {
   recentNotifications: { id: number; incident_id: string; kind: string; severity: Severity; channel: string; status: string; status_reason: string | null; subject: string | null; createdAt: string }[];
   health: string;
 }
+
+// ------------------------------------------------------------------ data check (uploads)
+export interface UploadIssue { level: "error" | "warn" | "info"; code: string; text: string }
+export interface UploadSummary {
+  layout: string; delimiter: string; columns: string[]; rows: number; series: number; types: Record<string, number>; first: string; last: string;
+  exactDuplicates: number; emptyValues: number; seriesWithErrors: number; seriesWithWarnings: number; seriesMatchedToPlatform: number;
+  badLinesSkipped: number; unparseableTimestamps: number; timezone: string; checks: { code: string; level: UploadIssue["level"]; series: number }[];
+}
+export interface UploadSeries {
+  series: string; displayName: string | null; type: string; unit: string; room: string | null; platformSensor: string | null; rows: number;
+  validValues: number; first: string | null; last: string | null; completenessPct: number | null; gaps: number; gapHours: number; outOfRange: number;
+  spikes: number; longestFlatHours: number | null; stats: { min: number; max: number; mean: number; std: number; p05: number; p95: number; zeros: number } | null;
+  issues: UploadIssue[]; errors: number; warnings: number;
+}
+export interface Upload {
+  id: string; filename: string; sizeBytes: number; status: "PROCESSING" | "DONE" | "FAILED"; error: string | null; uploadedBy: string | null;
+  createdAt: string; finishedAt: string | null; summary: UploadSummary | null; series?: UploadSeries[];
+}
+
+/** Multipart upload with progress (fetch has no upload progress events). */
+export function uploadFile(file: File, onProgress: (pct: number) => void): Promise<Upload> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/uploads");
+    const token = auth.token();
+    if (token) {
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.setRequestHeader("X-Operator-Name", auth.name());
+    }
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((100 * e.loaded) / e.total));
+    xhr.onload = () => {
+      let body: any = null;
+      try { body = JSON.parse(xhr.responseText); } catch { /* not json */ }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(body);
+      else reject(new ApiError(xhr.status, body?.detail ?? `HTTP ${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new ApiError(0, "Backend unreachable - check that the API is running."));
+    const fd = new FormData();
+    fd.append("file", file);
+    xhr.send(fd);
+  });
+}
+
+// ------------------------------------------------------------------ assistant
+export interface ChatTurn { role: "user" | "assistant"; content: string; toolCalls?: { name: string; input: unknown; error: boolean }[]; mode?: string; model?: string | null; notice?: string }
+export interface ChatReply { answer: string; toolCalls: { name: string; input: unknown; error: boolean }[]; mode: "llm" | "builtin"; model: string | null; notice?: string; latencyMs: number }

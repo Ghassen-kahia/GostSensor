@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavLink, Route, Routes, useLocation } from "react-router-dom";
-import { Activity, BarChart3, Bot, Building2, FileText, Gauge, LogIn, LogOut, Menu, Moon, Network, Pause, Play, Radio, ShieldAlert, Sun } from "lucide-react";
+import { Activity, BarChart3, Bot, Building2, FileSpreadsheet, FileText, Gauge, LogIn, LogOut, Menu, Moon, Network, Pause, Play, Radio, ShieldAlert, Sun } from "lucide-react";
 import { api, Health, Summary } from "./api";
+import ChatWidget from "./Chat";
 import { GhostIcon, Modal } from "./components";
 import { fmtEpoch, useAction, useApi, useClock, useLive, useOperator } from "./lib";
 import Overview from "./pages/Overview";
@@ -13,6 +14,7 @@ import IncidentDetail from "./pages/IncidentDetail";
 import Investigation from "./pages/Investigation";
 import Reports from "./pages/Reports";
 import SystemHealth from "./pages/SystemHealth";
+import DataCheck from "./pages/DataCheck";
 
 const NAV = [
   { to: "/", label: "Executive overview", Icon: Gauge, end: true },
@@ -22,6 +24,7 @@ const NAV = [
   { to: "/incidents", label: "Incidents", Icon: ShieldAlert },
   { to: "/investigation", label: "AI investigation", Icon: Bot },
   { to: "/reports", label: "Reports & analytics", Icon: BarChart3 },
+  { to: "/data", label: "Data check (CSV)", Icon: FileSpreadsheet },
   { to: "/system", label: "Workflows & health", Icon: Network },
 ];
 
@@ -138,10 +141,13 @@ export default function App() {
             <Route path="/investigation/:id" element={<Investigation />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/system" element={<SystemHealth />} />
+            <Route path="/data" element={<DataCheck />} />
+            <Route path="/data/:id" element={<DataCheck />} />
             <Route path="*" element={<div className="state"><FileText size={20} /><p>Page not found. <NavLink to="/">Back to overview</NavLink></p></div>} />
           </Routes>
         </main>
       </div>
+      <ChatWidget />
     </div>
   );
 }

@@ -65,6 +65,7 @@ class Settings:
     automation_token: str | None = field(default_factory=lambda: _env("GHOST_AUTOMATION_TOKEN"))
     allow_anonymous_read: bool = field(default_factory=lambda: _env_bool("GHOST_ALLOW_ANONYMOUS_READ", True))
     max_body_bytes: int = field(default_factory=lambda: int(_env("GHOST_MAX_BODY_BYTES", str(512 * 1024))))
+    max_upload_mb: int = field(default_factory=lambda: int(_env("GHOST_MAX_UPLOAD_MB", "300")))
 
     # Replay clock
     data_mode: str = field(default_factory=lambda: (_env("GHOST_DATA_MODE", "REPLAY") or "REPLAY").upper())

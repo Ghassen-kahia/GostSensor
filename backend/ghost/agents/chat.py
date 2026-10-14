@@ -255,10 +255,12 @@ def status() -> dict:
             "tools": [t["name"] for t in TOOLS]}
 
 
-def answer(messages: list[dict], page: str | None = None) -> dict:
+def answer(messages: list[dict], page: str | None = None, lang: str = "en") -> dict:
     started = time.time()
     provider = llm.get_provider()
     system = SYSTEM_PROMPT + (f"\nThe user is currently on the dashboard page: {page}" if page else "")
+    if lang == "fr":
+        system += "\nThe dashboard is set to French: answer in French unless the user writes in another language."
     try:
         if isinstance(provider, llm.AnthropicProvider):
             out = _anthropic(provider, system, messages)

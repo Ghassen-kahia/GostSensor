@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from .. import db
 from ..config import settings
@@ -85,6 +86,11 @@ app.include_router(routes_read.router)
 app.include_router(routes_write.ops)
 app.include_router(routes_write.auto)
 app.include_router(routes_data.router)
+
+# Guide videos and their subtitles (large files kept in GHOST_DATA_DIR/media, outside the repo).
+# StaticFiles answers HTTP range requests, so the browser can seek inside a video.
+(settings.data_dir / "media").mkdir(parents=True, exist_ok=True)
+app.mount("/api/media", StaticFiles(directory=settings.data_dir / "media"), name="media")
 
 
 def run() -> None:

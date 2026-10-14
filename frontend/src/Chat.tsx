@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Bot, Send, Trash2, Wrench, X } from "lucide-react";
 import { api, ChatReply, ChatTurn } from "./api";
 import { useApi, useOperator } from "./lib";
+import { getLang, t } from "./i18n";
 
 const STORE = "ghost.chat";
 const SUGGESTIONS = [
@@ -71,7 +72,7 @@ export default function ChatWidget() {
     setBusy(true);
     setError(null);
     try {
-      const r = await api.post<ChatReply>("/api/chat", { messages: next.slice(-20).map(({ role, content }) => ({ role, content })), page: loc.pathname });
+      const r = await api.post<ChatReply>("/api/chat", { messages: next.slice(-20).map(({ role, content }) => ({ role, content })), page: loc.pathname, lang: getLang() });
       setTurns([...next, { role: "assistant", content: r.answer, toolCalls: r.toolCalls, mode: r.mode, model: r.model, notice: r.notice }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -82,53 +83,53 @@ export default function ChatWidget() {
   const submit = (e: FormEvent) => { e.preventDefault(); ask(input); };
 
   if (!open) {
-    return <button className="chat-fab" onClick={() => setOpen(true)} aria-label="Open the assistant"><Bot size={22} /></button>;
+    return <button className="chat-fab" onClick={() => setOpen(true)} aria-label={t("Open the assistant")}><Bot size={22} /></button>;
   }
   return (
-    <section className="chat-panel" role="dialog" aria-label="Ghost Sensor assistant">
+    <section className="chat-panel" role="dialog" aria-label={t("Ghost Sensor assistant")}>
       <header className="chat-head">
         <Bot size={18} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <strong>Assistant</strong>
+          <strong>{t("Assistant")}</strong>
           <div className="muted" style={{ fontSize: 11.5 }}>
-            {status.data ? (status.data.mode === "llm" ? `AI · ${status.data.model}` : "Built-in mode (no AI model configured)") : "…"} · answers from platform data
+            {status.data ? (status.data.mode === "llm" ? `${t("AI")} · ${status.data.model}` : t("Built-in mode (no AI model configured)")) : "…"} · {t("answers from platform data")}
           </div>
         </div>
-        <button className="btn ghost-btn sm" onClick={() => setTurns([])} aria-label="Clear conversation" title="Clear conversation"><Trash2 size={15} /></button>
-        <button className="btn ghost-btn sm" onClick={() => setOpen(false)} aria-label="Close assistant"><X size={16} /></button>
+        <button className="btn ghost-btn sm" onClick={() => setTurns([])} aria-label={t("Clear conversation")} title={t("Clear conversation")}><Trash2 size={15} /></button>
+        <button className="btn ghost-btn sm" onClick={() => setOpen(false)} aria-label={t("Close assistant")}><X size={16} /></button>
       </header>
       <div className="chat-body">
-        {!token && <div className="banner warn">Sign in as operator (top-right) to use the assistant.</div>}
+        {!token && <div className="banner warn">{t("Sign in as operator (top-right) to use the assistant.")}</div>}
         {turns.length === 0 && (
           <div className="stack">
-            <p className="secondary" style={{ margin: 0 }}>Ask about rooms, sensors, readings, ghost sensors, incidents, the model or uploaded CSV files.</p>
-            {SUGGESTIONS.map((s) => <button key={s} className="chat-suggestion" disabled={!token || busy} onClick={() => ask(s)}>{s}</button>)}
+            <p className="secondary" style={{ margin: 0 }}>{t("Ask about rooms, sensors, readings, ghost sensors, incidents, the model or uploaded CSV files.")}</p>
+            {SUGGESTIONS.map((s) => <button key={s} className="chat-suggestion" disabled={!token || busy} onClick={() => ask(t(s))}>{t(s)}</button>)}
           </div>
         )}
-        {turns.map((t, i) => (
-          <div key={i} className={`chat-msg ${t.role}`}>
-            {t.role === "user" ? t.content : (
+        {turns.map((turn, i) => (
+          <div key={i} className={`chat-msg ${turn.role}`}>
+            {turn.role === "user" ? turn.content : (
               <>
-                <Markdown text={t.content} />
-                {t.notice && <div className="muted" style={{ fontSize: 11.5 }}>{t.notice}</div>}
-                {t.toolCalls && t.toolCalls.length > 0 && (
-                  <div className="chat-tools" title="Read-only lookups the assistant made">
-                    <Wrench size={11} /> {t.toolCalls.map((c) => c.name.replace(/_/g, " ")).join(" · ")}
+                <Markdown text={turn.content} />
+                {turn.notice && <div className="muted" style={{ fontSize: 11.5 }}>{turn.notice}</div>}
+                {turn.toolCalls && turn.toolCalls.length > 0 && (
+                  <div className="chat-tools" title={t("Read-only lookups the assistant made")}>
+                    <Wrench size={11} /> {turn.toolCalls.map((c) => c.name.replace(/_/g, " ")).join(" · ")}
                   </div>
                 )}
-                <div className="muted" style={{ fontSize: 10.5 }}>{t.mode === "llm" ? `AI-generated (${t.model}) - verify important facts` : "Built-in answer"}</div>
+                <div className="muted" style={{ fontSize: 10.5 }}>{turn.mode === "llm" ? t("AI-generated ({m}) - verify important facts", { m: turn.model }) : t("Built-in answer")}</div>
               </>
             )}
           </div>
         ))}
-        {busy && <div className="chat-msg assistant"><span className="muted">Looking it up…</span></div>}
+        {busy && <div className="chat-msg assistant"><span className="muted">{t("Looking it up…")}</span></div>}
         {error && <div className="banner err">{error}</div>}
         <div ref={endRef} />
       </div>
       <form className="chat-input" onSubmit={submit}>
-        <input className="input" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask a question…" maxLength={2000}
-          disabled={!token || busy} aria-label="Question" />
-        <button className="btn primary sm" type="submit" disabled={!token || busy || !input.trim()} aria-label="Send"><Send size={14} /></button>
+        <input className="input" value={input} onChange={(e) => setInput(e.target.value)} placeholder={t("Ask a question…")} maxLength={2000}
+          disabled={!token || busy} aria-label={t("Question")} />
+        <button className="btn primary sm" type="submit" disabled={!token || busy || !input.trim()} aria-label={t("Send")}><Send size={14} /></button>
       </form>
     </section>
   );

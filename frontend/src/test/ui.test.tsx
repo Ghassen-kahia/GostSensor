@@ -7,6 +7,8 @@ import { ReadingValue, SourceBadge, VirtualBadge } from "../components";
 import { ageAt, fmtDuration, fmtTime } from "../lib";
 import { OperatorProvider, ToastProvider } from "../lib";
 import Sensors from "../pages/Sensors";
+import { act } from "@testing-library/react";
+import { LangProvider, LangSwitch } from "../i18n";
 
 const base: Reading = {
   sensorId: "T-02-14-N", type: "TEMPERATURE", unit: "degC", roomId: "02-14-N", sensorStatus: "ONLINE", anomaly: null, incidentId: null,
@@ -23,12 +25,12 @@ describe("physical vs inferred presentation", () => {
   it("labels physical readings as physical", () => {
     render(<SourceBadge r={base} />);
     expect(screen.getByText("Physical")).toBeInTheDocument();
-    expect(screen.queryByText("Capteur Virtuel Actif")).toBeNull();
+    expect(screen.queryByText("Virtual sensor active")).toBeNull();
   });
 
   it("labels inferred readings with the virtual-sensor badge and shows the interval", () => {
     render(<><SourceBadge r={inferred} /><ReadingValue r={inferred} /></>);
-    expect(screen.getByText("Capteur Virtuel Actif")).toBeInTheDocument();
+    expect(screen.getByText("Virtual sensor active")).toBeInTheDocument();
     expect(screen.getByText(/±0\.8/)).toBeInTheDocument();
     expect(screen.getByTitle(/90 % interval/)).toBeInTheDocument();
   });
@@ -41,6 +43,13 @@ describe("physical vs inferred presentation", () => {
   it("virtual badge has an accessible ghost icon", () => {
     render(<VirtualBadge />);
     expect(screen.getByRole("img", { name: /virtual sensor/i })).toBeInTheDocument();
+  });
+  it("switches the badge to French with the flag buttons", () => {
+    render(<LangProvider><LangSwitch /><VirtualBadge /></LangProvider>);
+    act(() => screen.getByRole("button", { name: "Français" }).click());
+    expect(screen.getByText("Capteur Virtuel Actif")).toBeInTheDocument();
+    act(() => screen.getByRole("button", { name: "English" }).click());
+    expect(screen.getByText("Virtual sensor active")).toBeInTheDocument();
   });
 });
 
@@ -75,7 +84,7 @@ describe("Sensors page", () => {
     await waitFor(() => expect(screen.getByText("T-B")).toBeInTheDocument());
     const rowB = screen.getByText("T-B").closest("tr")!;
     expect(rowB.className).toContain("inferred");
-    expect(rowB.textContent).toContain("Capteur Virtuel Actif");
+    expect(rowB.textContent).toContain("Virtual sensor active");
     const rowA = screen.getByText("T-A").closest("tr")!;
     expect(rowA.textContent).toContain("Physical");
     expect(rowA.className).not.toContain("inferred");

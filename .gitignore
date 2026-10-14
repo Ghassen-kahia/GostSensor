@@ -27,3 +27,6 @@ DOE/
 *.pdf
 *.loop
 *.tsbuildinfo
+
+# Office lock files
+~$*

@@ -5,6 +5,7 @@ import { ArrowDownUp } from "lucide-react";
 import { Page, qs, Sensor } from "../api";
 import { Card, ChartTooltip, DataState, Drawer, Pager, ReadingValue, SensorStatusBadge, SimulatedBadge, SourceBadge, VirtualBadge } from "../components";
 import { ageAt, fmtNum, fmtTime, unitLabel, useApi, useClock } from "../lib";
+import { t } from "../i18n";
 
 type SensorPage = Page<Sensor> & { statusCounts: Record<string, number>; sourceCounts: Record<string, number> };
 const TYPES = ["TEMPERATURE", "CO2", "ENERGY", "OCCUPANCY", "WATER", "HUMIDITY", "LIGHTING"];
@@ -26,21 +27,21 @@ export default function Sensors() {
   const clock = useClock();
   const [open, setOpen] = useState<string | null>(null);
   const sortBtn = (key: string, label: string) => (
-    <button onClick={() => set({ sort: key, order: sort === key && order === "asc" ? "desc" : "asc" })} aria-label={`Sort by ${label}`}>
+    <button onClick={() => set({ sort: key, order: sort === key && order === "asc" ? "desc" : "asc" })} aria-label={`${t("Sort by")} ${label}`}>
       {label}{sort === key && <ArrowDownUp size={12} />}
     </button>
   );
 
   return (
     <>
-      <div className="page-head"><div><h1>Live sensor monitoring</h1><p>Latest reading per sensor at building time. Inferred values are marked with the ghost badge and a violet edge.</p></div></div>
+      <div className="page-head"><div><h1>{t("Live sensor monitoring")}</h1><p>{t("Latest reading per sensor at building time. Inferred values are marked with the ghost badge and a violet edge.")}</p></div></div>
       <div className="filters">
-        <input className="input" placeholder="Search sensor, room..." value={get("q")} onChange={(e) => set({ q: e.target.value })} aria-label="Search sensors" />
-        <select className="input" value={get("type")} onChange={(e) => set({ type: e.target.value })} aria-label="Sensor type"><option value="">All types</option>{TYPES.map((t) => <option key={t}>{t}</option>)}</select>
-        <select className="input" value={get("status")} onChange={(e) => set({ status: e.target.value })} aria-label="Connectivity status"><option value="">All statuses</option>{STATUSES.map((t) => <option key={t}>{t}</option>)}<option value="STALE,OFFLINE,INVALID">Any fault</option></select>
-        <select className="input" value={get("source")} onChange={(e) => set({ source: e.target.value })} aria-label="Value source"><option value="">Physical + inferred</option><option value="PHYSICAL">Physical only</option><option value="INFERRED">Inferred only</option><option value="NONE">No value</option></select>
-        <select className="input" value={get("storey")} onChange={(e) => set({ storey: e.target.value })} aria-label="Storey"><option value="">All storeys</option>{["S1", "N0", "N1", "N2", "N3", "N4", "N5"].map((s) => <option key={s}>{s}</option>)}</select>
-        {q.data && <span className="muted" style={{ fontSize: 12 }}>{Object.entries(q.data.statusCounts).map(([k, v]) => `${v} ${k.toLowerCase()}`).join(" · ")}</span>}
+        <input className="input" placeholder={t("Search sensor, room...")} value={get("q")} onChange={(e) => set({ q: e.target.value })} aria-label={t("Search sensors")} />
+        <select className="input" value={get("type")} onChange={(e) => set({ type: e.target.value })} aria-label={t("Sensor type")}><option value="">{t("All types")}</option>{TYPES.map((x) => <option key={x} value={x}>{t(x)}</option>)}</select>
+        <select className="input" value={get("status")} onChange={(e) => set({ status: e.target.value })} aria-label={t("Connectivity status")}><option value="">{t("All statuses")}</option>{STATUSES.map((x) => <option key={x} value={x}>{t(x)}</option>)}<option value="STALE,OFFLINE,INVALID">{t("Any fault")}</option></select>
+        <select className="input" value={get("source")} onChange={(e) => set({ source: e.target.value })} aria-label={t("Value source")}><option value="">{t("Physical + inferred")}</option><option value="PHYSICAL">{t("Physical only")}</option><option value="INFERRED">{t("Inferred only")}</option><option value="NONE">{t("No value")}</option></select>
+        <select className="input" value={get("storey")} onChange={(e) => set({ storey: e.target.value })} aria-label={t("Storey")}><option value="">{t("All storeys")}</option>{["S1", "N0", "N1", "N2", "N3", "N4", "N5"].map((s) => <option key={s}>{s}</option>)}</select>
+        {q.data && <span className="muted" style={{ fontSize: 12 }}>{Object.entries(q.data.statusCounts).map(([k, v]) => `${v} ${t(k).toLowerCase()}`).join(" · ")}</span>}
       </div>
       <Card>
         <DataState q={q} lines={10} empty={(d) => d.items.length === 0}>
@@ -49,8 +50,8 @@ export default function Sensors() {
               <div className="table-wrap">
                 <table className="table">
                   <thead><tr>
-                    <th>{sortBtn("id", "Sensor")}</th><th>{sortBtn("room", "Room")}</th><th>{sortBtn("type", "Type")}</th><th>{sortBtn("value", "Latest value")}</th>
-                    <th>Source</th><th>Measured / inferred at</th><th>{sortBtn("freshness", "Freshness")}</th><th>{sortBtn("status", "Connectivity")}</th><th>Anomaly / incident</th>
+                    <th>{sortBtn("id", t("Sensor"))}</th><th>{sortBtn("room", t("Room"))}</th><th>{sortBtn("type", t("Type"))}</th><th>{sortBtn("value", t("Latest value"))}</th>
+                    <th>{t("Source")}</th><th>{t("Measured / inferred at")}</th><th>{sortBtn("freshness", t("Freshness"))}</th><th>{sortBtn("status", t("Connectivity"))}</th><th>{t("Anomaly / incident")}</th>
                   </tr></thead>
                   <tbody>
                     {d.items.map((s) => {
@@ -58,14 +59,14 @@ export default function Sensors() {
                       return (
                         <tr key={s.id} className={`clickable ${r.source === "INFERRED" ? "inferred" : ""}`} onClick={() => setOpen(s.id)}>
                           <td className="mono">{s.id}</td>
-                          <td>{s.roomId ? <Link to={`/twin?room=${encodeURIComponent(s.roomId)}&storey=${s.storey ?? ""}`} onClick={(e) => e.stopPropagation()}>{s.roomId}</Link> : <span className="muted">unmapped</span>}</td>
-                          <td>{s.type}</td>
+                          <td>{s.roomId ? <Link to={`/twin?room=${encodeURIComponent(s.roomId)}&storey=${s.storey ?? ""}`} onClick={(e) => e.stopPropagation()}>{s.roomId}</Link> : <span className="muted">{t("unmapped")}</span>}</td>
+                          <td>{t(s.type)}</td>
                           <td className="num"><ReadingValue r={r} /></td>
-                          <td><SourceBadge r={r} />{r.source === "INFERRED" && r.inferenceQuality && <div className="muted" style={{ fontSize: 11.5 }}>quality {r.inferenceQuality}</div>}</td>
+                          <td><SourceBadge r={r} />{r.source === "INFERRED" && r.inferenceQuality && <div className="muted" style={{ fontSize: 11.5 }}>{t("quality")} {t(r.inferenceQuality)}</div>}</td>
                           <td>{fmtTime(r.observedAt ?? r.inferredAt)}</td>
-                          <td title={`last transmission ${fmtTime(r.lastTransmissionAt)}`}>{ageAt(r.lastTransmissionAt, clock.data?.now)}</td>
+                          <td title={`${t("last transmission")} ${fmtTime(r.lastTransmissionAt)}`}>{ageAt(r.lastTransmissionAt, clock.data?.now)}</td>
                           <td><SensorStatusBadge s={r.sensorStatus} />{r.simulatedFault && <> <SimulatedBadge /></>}</td>
-                          <td>{r.anomaly ? <span className="badge">{r.anomaly}</span> : null} {r.incidentId && <Link to={`/incidents/${r.incidentId}`} onClick={(e) => e.stopPropagation()}>{r.incidentId}</Link>}</td>
+                          <td>{r.anomaly ? <span className="badge">{t(r.anomaly)}</span> : null} {r.incidentId && <Link to={`/incidents/${r.incidentId}`} onClick={(e) => e.stopPropagation()}>{r.incidentId}</Link>}</td>
                         </tr>
                       );
                     })}
@@ -97,20 +98,20 @@ export function SensorHistoryChart({ id, hours = 48 }: { id: string; hours?: num
         for (const r of d.inferred) map.set(r.t, { ...(map.get(r.t) ?? { t: r.t }), inferred: r.value, band: r.lower != null && r.upper != null ? [r.lower, r.upper] : null, actual: r.actual });
         const rows = [...map.values()].sort((a, b) => String(a.t).localeCompare(String(b.t)));
         const u = unitLabel(d.unit);
-        if (!rows.length) return <div className="state">No data in this window.</div>;
+        if (!rows.length) return <div className="state">{t("No data in this window.")}</div>;
         return (
           <>
-            <div className="legend"><span><i style={{ background: "var(--series-1)" }} />Physical</span><span><i style={{ background: "var(--series-2)" }} />Inferred (virtual)</span><span><i className="sq" style={{ background: "var(--series-2)", opacity: 0.3 }} />90 % interval</span>{d.inferred.some((r) => r.actual != null) && <span><i style={{ background: "var(--text-primary)" }} />Hidden true value (simulated outage)</span>}</div>
+            <div className="legend"><span><i style={{ background: "var(--series-1)" }} />{t("Physical")}</span><span><i style={{ background: "var(--series-2)" }} />{t("Inferred (virtual)")}</span><span><i className="sq" style={{ background: "var(--series-2)", opacity: 0.3 }} />{t("90 % interval")}</span>{d.inferred.some((r) => r.actual != null) && <span><i style={{ background: "var(--text-primary)" }} />{t("Hidden true value (simulated outage)")}</span>}</div>
             <ResponsiveContainer width="100%" height={260}>
               <ComposedChart data={rows} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <CartesianGrid stroke="var(--grid)" vertical={false} />
                 <XAxis dataKey="t" tickFormatter={(v) => fmtTime(v, false)} tick={{ fontSize: 11, fill: "var(--text-muted)" }} minTickGap={40} stroke="var(--border)" />
                 <YAxis tick={{ fontSize: 11, fill: "var(--text-muted)" }} stroke="var(--border)" domain={["auto", "auto"]} />
                 <Tooltip content={<ChartTooltip unit={u} labelFmt={fmtTime} />} />
-                <Area dataKey="band" name="Interval" stroke="none" fill="var(--series-2)" fillOpacity={0.22} isAnimationActive={false} connectNulls={false} />
-                <Line dataKey="physical" name="Physical" stroke="var(--series-1)" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls={false} />
-                <Line dataKey="inferred" name="Inferred" stroke="var(--series-2)" strokeWidth={2} dot={d.inferred.length < 4 ? { r: 4 } : false} isAnimationActive={false} connectNulls={false} />
-                <Line dataKey="actual" name="True value" stroke="var(--text-primary)" strokeWidth={1} dot={{ r: 1.5 }} isAnimationActive={false} connectNulls={false} />
+                <Area dataKey="band" name={t("Interval")} stroke="none" fill="var(--series-2)" fillOpacity={0.22} isAnimationActive={false} connectNulls={false} />
+                <Line dataKey="physical" name={t("Physical")} stroke="var(--series-1)" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls={false} />
+                <Line dataKey="inferred" name={t("Inferred")} stroke="var(--series-2)" strokeWidth={2} dot={d.inferred.length < 4 ? { r: 4 } : false} isAnimationActive={false} connectNulls={false} />
+                <Line dataKey="actual" name={t("True value")} stroke="var(--text-primary)" strokeWidth={1} dot={{ r: 1.5 }} isAnimationActive={false} connectNulls={false} />
               </ComposedChart>
             </ResponsiveContainer>
             <p className="muted" style={{ fontSize: 12, margin: 0 }}>{d.note}</p>
@@ -130,22 +131,22 @@ function SensorDrawer({ id, onClose }: { id: string; onClose: () => void }) {
         {(d) => (
           <>
             <dl className="kv">
-              <dt>Display name</dt><dd>{d.displayName ?? "-"}</dd>
-              <dt>Room</dt><dd>{d.room ? <Link to={`/twin?room=${encodeURIComponent(d.room.id)}&storey=${d.room.storey_id}`}>{d.room.id}</Link> : "unmapped"} {d.room?.long_name}</dd>
-              <dt>Type / unit</dt><dd>{d.type} · {unitLabel(d.unit) || "-"}</dd>
-              <dt>Connectivity</dt><dd><SensorStatusBadge s={d.reading.sensorStatus} /> last transmission {fmtTime(d.reading.lastTransmissionAt)}</dd>
-              <dt>Current value</dt><dd><ReadingValue r={d.reading} /> <SourceBadge r={d.reading} /></dd>
-              {d.reading.source === "INFERRED" && <><dt>Model</dt><dd className="mono">{d.reading.modelVersion} · quality {d.reading.inferenceQuality}</dd>
-                <dt>Interval</dt><dd>{fmtNum(d.reading.uncertainty?.lower)} - {fmtNum(d.reading.uncertainty?.upper)} ({Math.round((d.reading.uncertainty?.level ?? 0) * 100)} %, {d.reading.uncertainty?.method})</dd></>}
-              {d.reading.qualityReasons && d.reading.qualityReasons.length > 0 && <><dt>Quality notes</dt><dd>{d.reading.qualityReasons.join("; ")}</dd></>}
-              <dt>Last physical</dt><dd>{d.reading.lastPhysical ? `${fmtNum(d.reading.lastPhysical.value, 2)} at ${fmtTime(d.reading.lastPhysical.observedAt)}` : "never"}</dd>
-              <dt>Heartbeat</dt><dd>stale after {d.staleAfterS / 60} min, offline after {d.offlineAfterS / 60} min (bucket {d.resolutionS / 60} min)</dd>
-              <dt>Acquisition</dt><dd>{d.station ?? "-"} <span className="muted">({d.stationSource})</span></dd>
-              <dt>BMS point</dt><dd className="mono" style={{ fontSize: 11.5 }}>{d.externalId}</dd>
+              <dt>{t("Display name")}</dt><dd>{d.displayName ?? "-"}</dd>
+              <dt>{t("Room")}</dt><dd>{d.room ? <Link to={`/twin?room=${encodeURIComponent(d.room.id)}&storey=${d.room.storey_id}`}>{d.room.id}</Link> : t("unmapped")} {d.room?.long_name}</dd>
+              <dt>{t("Type / unit")}</dt><dd>{t(d.type)} · {unitLabel(d.unit) || "-"}</dd>
+              <dt>{t("Connectivity")}</dt><dd><SensorStatusBadge s={d.reading.sensorStatus} /> {t("last transmission")} {fmtTime(d.reading.lastTransmissionAt)}</dd>
+              <dt>{t("Current value")}</dt><dd><ReadingValue r={d.reading} /> <SourceBadge r={d.reading} /></dd>
+              {d.reading.source === "INFERRED" && <><dt>{t("Model")}</dt><dd className="mono">{d.reading.modelVersion} · {t("quality")} {t(d.reading.inferenceQuality ?? "")}</dd>
+                <dt>{t("Interval")}</dt><dd>{fmtNum(d.reading.uncertainty?.lower)} - {fmtNum(d.reading.uncertainty?.upper)} ({Math.round((d.reading.uncertainty?.level ?? 0) * 100)} %, {d.reading.uncertainty?.method})</dd></>}
+              {d.reading.qualityReasons && d.reading.qualityReasons.length > 0 && <><dt>{t("Quality notes")}</dt><dd>{d.reading.qualityReasons.join("; ")}</dd></>}
+              <dt>{t("Last physical")}</dt><dd>{d.reading.lastPhysical ? `${fmtNum(d.reading.lastPhysical.value, 2)} ${t("at")} ${fmtTime(d.reading.lastPhysical.observedAt)}` : t("never")}</dd>
+              <dt>{t("Heartbeat")}</dt><dd>{t("stale after {a} min, offline after {b} min (bucket {c} min)", { a: d.staleAfterS / 60, b: d.offlineAfterS / 60, c: d.resolutionS / 60 })}</dd>
+              <dt>{t("Acquisition")}</dt><dd>{d.station ?? "-"} <span className="muted">({d.stationSource})</span></dd>
+              <dt>{t("BMS point")}</dt><dd className="mono" style={{ fontSize: 11.5 }}>{d.externalId}</dd>
             </dl>
-            <div className="row"><h3>History</h3><select className="input" style={{ marginLeft: "auto" }} value={hours} onChange={(e) => setHours(Number(e.target.value))} aria-label="History window"><option value={12}>12 h</option><option value={48}>48 h</option><option value={168}>7 days</option></select></div>
+            <div className="row"><h3>{t("History")}</h3><select className="input" style={{ marginLeft: "auto" }} value={hours} onChange={(e) => setHours(Number(e.target.value))} aria-label={t("History window")}><option value={12}>12 h</option><option value={48}>48 h</option><option value={168}>{t("7 days")}</option></select></div>
             <SensorHistoryChart id={id} hours={hours} />
-            {d.simulatedFaults.length > 0 && <div><h3>Simulated faults</h3><ul className="list">{d.simulatedFaults.map((f) => <li key={f.id}>{f.kind} from {fmtTime(f.startAt)} to {f.endAt ? fmtTime(f.endAt) : "open"}</li>)}</ul></div>}
+            {d.simulatedFaults.length > 0 && <div><h3>{t("Simulated faults")}</h3><ul className="list">{d.simulatedFaults.map((f) => <li key={f.id}>{t(f.kind)} {t("from")} {fmtTime(f.startAt)} {t("to")} {f.endAt ? fmtTime(f.endAt) : t("open")}</li>)}</ul></div>}
           </>
         )}
       </DataState>

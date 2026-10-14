@@ -27,6 +27,7 @@
   --critical: #d03b3b;
   --info: #77756f;
   --good-ink: #006300;
+  --good-soft: #e9f6e6;
   --critical-ink: #a32424;
   --seq-1: #cde2fb; --seq-2: #9ec5f4; --seq-3: #6da7ec; --seq-4: #3987e5; --seq-5: #256abf; --seq-6: #184f95; --seq-7: #0d366b;
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
@@ -40,7 +41,7 @@
     --bg: #121211; --surface-1: #1a1a19; --surface-2: #232321; --surface-3: #2d2d2a; --border: #383835; --grid: #2b2b29;
     --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8d85; --accent: #3987e5;
     --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
-    --ghost: #9085e9; --ghost-soft: #2a2648; --good-ink: #3fc53f; --critical-ink: #f08080; --info: #8f8d85;
+    --ghost: #9085e9; --ghost-soft: #2a2648; --good-ink: #3fc53f; --good-soft: #15291a; --critical-ink: #f08080; --info: #8f8d85;
     --seq-1: #0d366b; --seq-2: #104281; --seq-3: #184f95; --seq-4: #256abf; --seq-5: #3987e5; --seq-6: #6da7ec; --seq-7: #9ec5f4;
     --shadow: none;
   }
@@ -50,7 +51,7 @@
   --bg: #121211; --surface-1: #1a1a19; --surface-2: #232321; --surface-3: #2d2d2a; --border: #383835; --grid: #2b2b29;
   --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #8f8d85; --accent: #3987e5;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
-  --ghost: #9085e9; --ghost-soft: #2a2648; --good-ink: #3fc53f; --critical-ink: #f08080; --info: #8f8d85;
+  --ghost: #9085e9; --ghost-soft: #2a2648; --good-ink: #3fc53f; --good-soft: #15291a; --critical-ink: #f08080; --info: #8f8d85;
   --seq-1: #0d366b; --seq-2: #104281; --seq-3: #184f95; --seq-4: #256abf; --seq-5: #3987e5; --seq-6: #6da7ec; --seq-7: #9ec5f4;
   --shadow: none;
 }
@@ -231,3 +232,30 @@ table.table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .chat-input { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--border); }
 .chat-input .input { flex: 1; }
 @media (max-width: 860px) { .chat-panel { right: 8px; bottom: 8px; } .chat-fab { right: 14px; bottom: 14px; } }
+
+/* ---------- plain-language summary ---------- */
+.plain { background: var(--good-soft); border: 1px solid var(--good); border-left-width: 5px; border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.plain-head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; color: var(--good-ink); }
+.plain-headline { margin: 0; font-size: 16px; font-weight: 620; color: var(--text-primary); }
+.plain-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; color: var(--text-primary); }
+.plain-todo { margin: 0; padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--good) 35%, transparent); }
+
+/* ---------- language flags & theme switch ---------- */
+.flag-seg button { display: inline-flex; align-items: center; padding: 4px 7px; }
+.flag-seg button svg { border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.18); display: block; }
+.flag-seg button:not(.on) svg { opacity: .55; filter: grayscale(.4); }
+.theme-seg button { display: inline-flex; align-items: center; gap: 5px; }
+@media (max-width: 640px) { .theme-seg button span { display: none; } }
+
+/* ---------- partner logo (white plate keeps the dark lettering readable in night mode) ---------- */
+.partner-logo { margin: 0 8px 14px; padding: 8px 10px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; display: flex; justify-content: center; }
+.partner-logo img { display: block; width: 100%; max-width: 170px; height: auto; }
+
+/* ---------- guide page ---------- */
+.guide-video { width: 100%; max-height: 70vh; border-radius: 8px; background: #000; display: block; }
+.guide-pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.guide-page { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); text-decoration: none; background: var(--surface-1); }
+.guide-page:hover { border-color: var(--accent); background: var(--surface-2); }
+.guide-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.guide-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.guide-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }

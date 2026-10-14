@@ -6,6 +6,7 @@ import re
 import threading
 import uuid
 from pathlib import Path
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
@@ -149,6 +150,7 @@ class ChatBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     messages: list[ChatMessage] = Field(min_length=1, max_length=40)
     page: str | None = Field(default=None, max_length=200)
+    lang: Literal["en", "fr"] = "en"
 
 
 @router.post("/chat")
@@ -157,7 +159,7 @@ def chat_endpoint(body: ChatBody, request: Request, actor: str = Depends(require
     limiter.check(request)
     if body.messages[-1].role != "user":
         raise HTTPException(400, "the last message must come from the user")
-    return chat.answer([m.model_dump() for m in body.messages], page=body.page)
+    return chat.answer([m.model_dump() for m in body.messages], page=body.page, lang=body.lang)
 
 
 @router.get("/chat/status", dependencies=[Depends(require_read)])

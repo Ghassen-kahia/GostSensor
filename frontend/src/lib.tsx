@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { api, auth, Clock } from "./api";
+import { locale, t } from "./i18n";
 
 // ------------------------------------------------------------------ formatting
 export function fmtTime(iso: string | null | undefined, withDate = true): string {
@@ -22,7 +23,7 @@ export function fmtDuration(seconds: number | null | undefined): string {
   if (s < 90) return `${s}s`;
   if (s < 5400) return `${Math.round(s / 60)} min`;
   if (s < 172800) return `${(s / 3600).toFixed(1)} h`;
-  return `${(s / 86400).toFixed(1)} d`;
+  return `${(s / 86400).toFixed(1)} ${t("d")}`;
 }
 
 /** Age of a building-time ISO timestamp relative to the building clock (not the browser clock). */
@@ -32,7 +33,7 @@ export function ageAt(iso: string | null | undefined, clockNow: number | undefin
 }
 
 export function fmtNum(v: number | null | undefined, digits = 1): string {
-  return v == null || Number.isNaN(v) ? "-" : v.toLocaleString("en-GB", { maximumFractionDigits: digits, minimumFractionDigits: digits });
+  return v == null || Number.isNaN(v) ? "-" : v.toLocaleString(locale(), { maximumFractionDigits: digits, minimumFractionDigits: digits });
 }
 
 export function unitLabel(u: string | null | undefined): string {
@@ -126,7 +127,7 @@ export function useAction() {
   const { token } = useOperator();
   return useCallback(async <T,>(fn: () => Promise<T>, success: string): Promise<T | undefined> => {
     if (!token) {
-      toast("error", "Operator sign-in required for this action (top-right).");
+      toast("error", t("Operator sign-in required for this action (top-right)."));
       return undefined;
     }
     try {
